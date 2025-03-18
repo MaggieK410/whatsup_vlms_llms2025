@@ -16,7 +16,6 @@ from .constants import ARO_ROOT, COCO_ROOT, FLICKR_ROOT
 from .retrieval import pre_caption
 import random
 
-
 class VG_Relation(Dataset):
     def __init__(self, image_preprocess, text_perturb_fn=None, image_perturb_fn=None, root_dir=ARO_ROOT, download=False):
         '''
@@ -386,7 +385,7 @@ class Controlled_Images(Dataset):
             if not os.path.exists(annotation_file):
                 subprocess.call(["gdown", "--id", "1ap8mmmpQjLIjPGuplkpBgc1hoEHCj4hm", "--output", annotation_file])
 
-        else:
+        elif subset == 'B':
             annotation_file = os.path.join(root_dir, "controlled_clevr_dataset.json")
             image_dir = os.path.join(root_dir, 'controlled_clevr')
             if not os.path.exists(image_dir):
@@ -398,6 +397,10 @@ class Controlled_Images(Dataset):
 
             if not os.path.exists(annotation_file):
                 subprocess.call(["gdown", "--id", "1unNNosLbdy9NDjgj4l8fsQP3WiAAGA6z", "--output", annotation_file])
+
+        elif subset == 'left_right':
+            annotation_file = os.path.join(root_dir, "left_right_images.json")
+            image_dir = os.path.join(root_dir, 'left_right_images')
 
         full_dataset = json.load(open(annotation_file))
         
@@ -792,6 +795,10 @@ def get_controlled_images_a(image_preprocess, text_perturb_fn=None, image_pertur
 def get_controlled_images_b(image_preprocess, text_perturb_fn=None, image_perturb_fn=None, download=True):
     return Controlled_Images(image_preprocess=image_preprocess, text_perturb_fn=text_perturb_fn,
                    image_perturb_fn=image_perturb_fn, download=download, subset='B')
+
+def get_left_right_dataset(image_preprocess, text_perturb_fn=None, image_perturb_fn=None, download=True):
+    return Controlled_Images(image_preprocess=image_preprocess, text_perturb_fn=text_perturb_fn,
+                   image_perturb_fn=image_perturb_fn, download=download, subset='left_right')
 
 def get_coco_qa_one_obj(image_preprocess, text_perturb_fn=None, image_perturb_fn=None, download=False):
     return COCO_QA(image_preprocess=image_preprocess, text_perturb_fn=text_perturb_fn,

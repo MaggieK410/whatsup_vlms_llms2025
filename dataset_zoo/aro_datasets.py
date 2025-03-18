@@ -14,6 +14,7 @@ from torchvision.datasets.utils import download_url
 from .perturbations import TextShuffler
 from .constants import ARO_ROOT, COCO_ROOT, FLICKR_ROOT
 from .retrieval import pre_caption
+import random
 
 
 class VG_Relation(Dataset):
@@ -349,8 +350,28 @@ class Flickr30k_Order(Dataset):
 
 
 class Controlled_Images(Dataset):
-    def __init__(self, image_preprocess, text_perturb_fn=None, image_perturb_fn=None, root_dir=ARO_ROOT, download=False, subset='A'):
+    def __init__(self, image_preprocess, text_perturb_fn=None, image_perturb_fn=None, 
+                 root_dir=ARO_ROOT, download=False, subset='A', split='test', train_ratio=0.8, seed=42):
+        """
+        Initialize the Controlled_Images dataset with train/test split capability
+        
+        Args:
+            image_preprocess: Image preprocessing function
+            text_perturb_fn: Optional text perturbation function
+            image_perturb_fn: Optional image perturbation function
+            root_dir: Root directory for dataset
+            download: Whether to download the dataset if not found
+            subset: 'A' or 'B' for different controlled image datasets
+            split: 'train', 'test', or 'all' to specify data split
+            train_ratio: Proportion of data to use for training (default: 0.8)
+            seed: Random seed for reproducible train/test splits
+        """
         self.root_dir = root_dir
+        self.split = split
+        
+        # Set random seed for reproducible splits
+        random.seed(seed)
+        
         if subset == 'A':
             annotation_file = os.path.join(root_dir, "controlled_images_dataset.json")
             image_dir = os.path.join(root_dir, 'controlled_images')
@@ -378,10 +399,31 @@ class Controlled_Images(Dataset):
             if not os.path.exists(annotation_file):
                 subprocess.call(["gdown", "--id", "1unNNosLbdy9NDjgj4l8fsQP3WiAAGA6z", "--output", annotation_file])
 
+        full_dataset = json.load(open(annotation_file))
+        
+        if split != 'all':
+            indices = list(range(len(full_dataset)))
 
-        self.dataset = json.load(open(annotation_file))
+            indices.sort(key=lambda i: full_dataset[i]['image_path'])  #
+            random.seed(seed)
+
+            train_size = int(train_ratio * len(full_dataset))
+
+            if split == 'train':
+                selected_indices = indices[:train_size]
+            else:  # split == 'test'
+                selected_indices = indices[train_size:]
+
+            self.dataset = [full_dataset[i] for i in selected_indices]
+            print(f"Using {split} split with {len(self.dataset)} samples")
+        else:
+            self.dataset = full_dataset
+            print(f"Using full dataset with {len(self.dataset)} samples")
+
         self.subset = subset
         self.all_prepositions = []
+        
+        # Initialize other dataset-specific attributes
         if self.subset == 'A':
             for d in self.dataset:
                 if 'left_of' in d['image_path']:
@@ -392,16 +434,17 @@ class Controlled_Images(Dataset):
                     self.all_prepositions.append('on')
                 else:
                     self.all_prepositions.append('under')
-            self.eval_dict = {(d['image_path'].split('/')[-1].split('_')[0], \
-                                d['image_path'].split('/')[-1].split('_')[-1][:-5]): \
-                                {'left': 0, 'right': 0, \
-                                'on': 0, 'under': 0} for d in self.dataset}
-            self.pred_dict = {(d['image_path'].split('/')[-1].split('_')[0], \
-                                d['image_path'].split('/')[-1].split('_')[-1][:-5]): \
-                                {'left': '', 'right': '', \
-                                'on': '', 'under': ''} for d in self.dataset}
-
-
+            
+            # Create evaluation dictionaries
+            self.eval_dict = {(d['image_path'].split('/')[-1].split('_')[0], 
+                              d['image_path'].split('/')[-1].split('_')[-1][:-5]): 
+                             {'left': 0, 'right': 0, 'on': 0, 'under': 0} 
+                             for d in self.dataset}
+            
+            self.pred_dict = {(d['image_path'].split('/')[-1].split('_')[0], 
+                              d['image_path'].split('/')[-1].split('_')[-1][:-5]): 
+                             {'left': '', 'right': '', 'on': '', 'under': ''} 
+                             for d in self.dataset}
         else:
             for d in self.dataset:
                 if 'left_of' in d['image_path']:
@@ -412,16 +455,24 @@ class Controlled_Images(Dataset):
                     self.all_prepositions.append('in-front_of')
                 else:
                     self.all_prepositions.append('behind')
-            self.eval_dict = {(d['image_path'].split('/')[-1].split('_')[0], \
-                                d['image_path'].split('/')[-1].split('_')[-1][:-5]): \
-                                {'left': 0, 'right': 0, \
-                                'in-front': 0, 'behind': 0} for d in self.dataset}
-            self.pred_dict = {(d['image_path'].split('/')[-1].split('_')[0], \
-                                d['image_path'].split('/')[-1].split('_')[-1][:-5]): \
-                                {'left': '', 'right': '', \
-                                'in-front': '', 'behind': ''} for d in self.dataset}
+            
+            # Create evaluation dictionaries
+            self.eval_dict = {(d['image_path'].split('/')[-1].split('_')[0], 
+                              d['image_path'].split('/')[-1].split('_')[-1][:-5]): 
+                             {'left': 0, 'right': 0, 'in-front': 0, 'behind': 0} 
+                             for d in self.dataset}
+            
+            self.pred_dict = {(d['image_path'].split('/')[-1].split('_')[0], 
+                              d['image_path'].split('/')[-1].split('_')[-1][:-5]): 
+                             {'left': '', 'right': '', 'in-front': '', 'behind': ''} 
+                             for d in self.dataset}
 
         self.image_preprocess = image_preprocess
+        self.text_perturb_fn = text_perturb_fn
+        self.image_perturb_fn = image_perturb_fn
+        
+    # Make sure to include all your other methods like __len__, __getitem__, etc.
+    # Here, I'm assuming they remain unchanged and work with self.dataset
 
     def __len__(self):
         return len(self.dataset)
@@ -431,8 +482,10 @@ class Controlled_Images(Dataset):
         image = Image.open(test_case["image_path"]).convert('RGB')
         if self.image_preprocess is not None:
             image = self.image_preprocess(image)
-        
-        item = edict({"image_options": [image], "caption_options": test_case['caption_options']})
+
+        image_path = os.path.join(self.root_dir, test_case['image_path'])  # Get full image path
+
+        item = edict({"image_options": [image], "caption_options": test_case['caption_options'], "image_path": image_path})
         return item
 
     def download(self):
@@ -732,11 +785,11 @@ def get_visual_genome_attribution(image_preprocess, text_perturb_fn=None, image_
     return VG_Attribution(image_preprocess=image_preprocess, text_perturb_fn=text_perturb_fn,
                    image_perturb_fn=image_perturb_fn, download=download)
 
-def get_controlled_images_a(image_preprocess, text_perturb_fn=None, image_perturb_fn=None, download=False):
+def get_controlled_images_a(image_preprocess, text_perturb_fn=None, image_perturb_fn=None, download=False, split='test'):
     return Controlled_Images(image_preprocess=image_preprocess, text_perturb_fn=text_perturb_fn,
-                   image_perturb_fn=image_perturb_fn, download=download, subset='A')
+                   image_perturb_fn=image_perturb_fn, download=download, subset='A', split=split)
 
-def get_controlled_images_b(image_preprocess, text_perturb_fn=None, image_perturb_fn=None, download=False):
+def get_controlled_images_b(image_preprocess, text_perturb_fn=None, image_perturb_fn=None, download=True):
     return Controlled_Images(image_preprocess=image_preprocess, text_perturb_fn=text_perturb_fn,
                    image_perturb_fn=image_perturb_fn, download=download, subset='B')
 

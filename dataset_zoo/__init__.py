@@ -2,7 +2,7 @@ from .aro_datasets import VG_Relation, VG_Attribution, COCO_Order, Flickr30k_Ord
 from .retrieval import COCO_Retrieval, Flickr30k_Retrieval
 
 
-def get_dataset(dataset_name, image_preprocess=None, text_perturb_fn=None, image_perturb_fn=None, download=False, *args, **kwargs):
+def get_dataset(dataset_name, image_preprocess=None, text_perturb_fn=None, image_perturb_fn=None, download=False, split="test", *args, **kwargs):
     """
     Helper function that returns a dataset object with an evaluation function. 
     dataset_name: Name of the dataset.
@@ -25,7 +25,7 @@ def get_dataset(dataset_name, image_preprocess=None, text_perturb_fn=None, image
         return get_flickr30k_order(image_preprocess=image_preprocess, text_perturb_fn=text_perturb_fn, image_perturb_fn=image_perturb_fn, download=download, *args, **kwargs)
     elif dataset_name == "Controlled_Images_A":
         from .aro_datasets import get_controlled_images_a
-        return get_controlled_images_a(image_preprocess=image_preprocess, text_perturb_fn=text_perturb_fn, image_perturb_fn=image_perturb_fn, download=download, *args, **kwargs)
+        return get_controlled_images_a(image_preprocess=image_preprocess, text_perturb_fn=text_perturb_fn, image_perturb_fn=image_perturb_fn, download=download, split=split, *args, **kwargs)
     elif dataset_name == "Controlled_Images_B":
         from .aro_datasets import get_controlled_images_b
         return get_controlled_images_b(image_preprocess=image_preprocess, text_perturb_fn=text_perturb_fn, image_perturb_fn=image_perturb_fn, download=download, *args, **kwargs)

@@ -34,6 +34,9 @@ def get_dataset(dataset_name, image_preprocess=None, text_perturb_fn=None, image
         return get_left_right_dataset(image_preprocess=image_preprocess, text_perturb_fn=text_perturb_fn,
                                        image_perturb_fn=image_perturb_fn, download=download, *args,
                                        **kwargs)
+    elif dataset_name == "On_Under_Images" :
+        from .aro_datasets import get_on_under_images
+        return get_on_under_images(image_preprocess=image_preprocess, text_perturb_fn=text_perturb_fn, image_perturb_fn=image_perturb_fn, download=download, *args, **kwargs)
     elif dataset_name == "COCO_QA_one_obj":
         from .aro_datasets import get_coco_qa_one_obj
         return get_coco_qa_one_obj(image_preprocess=image_preprocess, text_perturb_fn=text_perturb_fn, image_perturb_fn=image_perturb_fn, download=download, *args, **kwargs)

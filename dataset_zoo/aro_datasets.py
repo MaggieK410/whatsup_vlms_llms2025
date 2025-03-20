@@ -401,6 +401,11 @@ class Controlled_Images(Dataset):
         elif subset == 'left_right':
             annotation_file = os.path.join(root_dir, "left_right_images.json")
             image_dir = os.path.join(root_dir, 'left_right_images')
+            
+        elif subset == 'on_under' :
+            annotation_file = os.path.join(root_dir, "on_under_images.json")
+            image_dir = os.path.join(root_dir, 'on_under_images')
+            
 
         full_dataset = json.load(open(annotation_file))
         
@@ -427,7 +432,7 @@ class Controlled_Images(Dataset):
         self.all_prepositions = []
         
         # Initialize other dataset-specific attributes
-        if self.subset == 'A':
+        if self.subset == 'A' or self.subset == 'on_under':
             for d in self.dataset:
                 if 'left_of' in d['image_path']:
                     self.all_prepositions.append('left_of')
@@ -448,6 +453,7 @@ class Controlled_Images(Dataset):
                               d['image_path'].split('/')[-1].split('_')[-1][:-5]): 
                              {'left': '', 'right': '', 'on': '', 'under': ''} 
                              for d in self.dataset}
+            
         else:
             for d in self.dataset:
                 if 'left_of' in d['image_path']:
@@ -544,7 +550,7 @@ class Controlled_Images(Dataset):
         for obj_pair, correct_dict in self.eval_dict.items():
             if correct_dict['left'] and correct_dict['right']:
                 pair_correct += 1
-            if self.subset == 'A':
+            if self.subset == 'A' or self.subset == 'on_under':
                 if correct_dict['on'] and correct_dict['under']:
                     pair_correct += 1
             else:
@@ -799,6 +805,10 @@ def get_controlled_images_b(image_preprocess, text_perturb_fn=None, image_pertur
 def get_left_right_dataset(image_preprocess, text_perturb_fn=None, image_perturb_fn=None, download=True):
     return Controlled_Images(image_preprocess=image_preprocess, text_perturb_fn=text_perturb_fn,
                    image_perturb_fn=image_perturb_fn, download=download, subset='left_right')
+    
+def get_on_under_images(image_preprocess, text_perturb_fn=None, image_perturb_fn=None, download=True):
+    return Controlled_Images(image_preprocess=image_preprocess, text_perturb_fn=text_perturb_fn,
+                   image_perturb_fn=image_perturb_fn, download=download, subset='on_under')
 
 def get_coco_qa_one_obj(image_preprocess, text_perturb_fn=None, image_perturb_fn=None, download=False):
     return COCO_QA(image_preprocess=image_preprocess, text_perturb_fn=text_perturb_fn,

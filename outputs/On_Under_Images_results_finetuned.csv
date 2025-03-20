@@ -1,0 +1,5 @@
+,Preposition,Accuracy,Count,Dataset,Model,Seed
+0,on,0.6190476190476191,21,On_Under_Images,NegCLIP_finetuned,1
+1,under,0.3333333333333333,21,On_Under_Images,NegCLIP_finetuned,1
+0,on,0.47619047619047616,21,On_Under_Images,NegCLIP_finetuned,1
+1,under,0.5238095238095238,21,On_Under_Images,NegCLIP_finetuned,1

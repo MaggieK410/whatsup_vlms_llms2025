@@ -23,7 +23,7 @@ def config():
     parser.add_argument("--dataset", default="VG_Relation", type=str, \
             choices=["VG_Relation", "VG_Attribution", "COCO_Order", \
             "Flickr30k_Order", "Controlled_Images_A", "Controlled_Images_B", \
-            "COCO_QA_one_obj", "COCO_QA_two_obj", "VG_QA_one_obj", "VG_QA_two_obj"])
+            "COCO_QA_one_obj", "COCO_QA_two_obj", "VG_QA_one_obj", "VG_QA_two_obj", "On_Under_Images"])
     parser.add_argument("--seed", default=1, type=int)
     
     parser.add_argument("--download", action="store_true", help="Whether to download the dataset if it doesn't exist. (Default: False)")

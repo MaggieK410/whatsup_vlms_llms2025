@@ -32,13 +32,13 @@ def config():
     parser.add_argument("--batch-size", default=32, type=int)
     parser.add_argument("--eval-batch-size", default=32, type=int)
     parser.add_argument("--num_workers", default=4, type=int)
-    parser.add_argument("--model-name", default="NegCLIP", type=str)
+    parser.add_argument("--model-name", default="xvlm-pretrained-16m", type=str)
     parser.add_argument("--dataset", default="left_right_dataset", type=str)
     parser.add_argument("--seed", default=1, type=int)
     parser.add_argument("--lr", default=5e-6, type=float)
     parser.add_argument("--weight-decay", default=0.2, type=float)
     parser.add_argument("--epochs", default=10, type=int)
-    parser.add_argument("--download", action="store_true", help="Download the dataset if it doesn't exist")
+    parser.add_argument("--download", default=True, action="store_true", help="Download the dataset if it doesn't exist")
     parser.add_argument("--output-dir", default="./outputs", type=str)
     parser.add_argument("--save-scores", action="store_true", help="Whether to save the scores for analysis")
     parser.add_argument("--evaluate-only", action="store_true", help="Skip training and only evaluate")
@@ -76,7 +76,7 @@ def load_negclip_model(device_str, root_dir=CACHE_DIR):
     print("Loading NegCLIP weights...")
     state_dict = torch.load(path, map_location="cpu", weights_only=False)
     # Create model on CPU first
-    model, _, image_preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrained=None, device="cpu")
+    model, _, image_preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrained=path, device="cpu")
     model.load_state_dict(state_dict, strict=False)
 
     # Freeze most of the model to prevent catastrophic forgetting

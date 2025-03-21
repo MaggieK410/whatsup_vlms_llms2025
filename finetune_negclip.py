@@ -76,7 +76,7 @@ def load_negclip_model(device_str, root_dir=CACHE_DIR):
     print("Loading NegCLIP weights...")
     state_dict = torch.load(path, map_location="cpu", weights_only=False)
     # Create model on CPU first
-    model, _, image_preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrained=None, device="cpu")
+    model, _, image_preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrained=path, device="cpu")
     model.load_state_dict(state_dict, strict=False)
 
     # Freeze most of the model to prevent catastrophic forgetting
@@ -235,7 +235,7 @@ def main():
     train_loader = DataLoader(
         train_dataset,
         batch_size=1,  # Use batch size of 1 for this dataset structure
-        shuffle=False,
+        shuffle=True,
         num_workers=args.num_workers
     )
 
@@ -255,7 +255,7 @@ def main():
         collate_fn=collate_fn
     )
 
-    evaluate_model(model, test_loader, device, test_dataset, args)
+  #  evaluate_model(model, test_loader, device, test_dataset, args)
 
     optimizer = torch.optim.AdamW(
         model.model.parameters(),

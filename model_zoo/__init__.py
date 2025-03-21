@@ -85,6 +85,7 @@ def get_model(model_name, device, root_dir=CACHE_DIR):
         return xvlm_model, image_preprocess
     
     elif model_name == "xvlm-pretrained-16m":
+        device = 'cpu'
         from .xvlm_models import XVLMWrapper
         xvlm_model = XVLMWrapper(root_dir=root_dir, device=device, variant="xvlm-pretrained-16m")
         image_preprocess = transforms.Compose([

@@ -7,7 +7,8 @@ import numpy as np
 from tqdm import tqdm
 import torch.nn.functional as F
 from .xvlm_utils.xvlm import XVLM
-from .xvlm_utils.tokenization_bert import BertTokenizer
+#from .xvlm_utils.tokenization_bert import BertTokenizer
+from transformers import AutoTokenizer
 from .xvlm_utils.tokenization_roberta import RobertaTokenizer
 from .blip_utils.utils import MetricLogger
 
@@ -75,10 +76,10 @@ class XVLMWrapper:
         if self.config['use_roberta']:
             self.tokenizer = RobertaTokenizer.from_pretrained(self.config['text_encoder'])
         else:
-            # TODO: Hack. We should use the tokenizer from the config
-            self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-    
-    
+            # # TODO: Hack. We should use the tokenizer from the config
+            # self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+            self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+
     def download(self):
         import gdown
         print(f"Downloading XVLM model to {self.root_dir}...")

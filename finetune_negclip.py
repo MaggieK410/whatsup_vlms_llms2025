@@ -62,7 +62,7 @@ def load_negclip_model(device_str, root_dir=CACHE_DIR):
     """
     Load the NegCLIP model for fine-tuning, safely handling device mapping
     """
-    from model_zoo.clip_models import CLIPWrapper  # Assuming you have this in your model_zoo
+    from model_zoo.clip_models import ClipWrapperSpatialEmbeds  # Assuming you have this in your model_zoo
     # Create the directory if it doesn't exist
     os.makedirs(root_dir, exist_ok=True)
     # Get appropriate device
@@ -87,15 +87,22 @@ def load_negclip_model(device_str, root_dir=CACHE_DIR):
     # Only train the last layer of the text encoder
     print("Enabling training for specific layers...")
     for name, param in model.named_parameters():
-        if 'ln_final' in name or 'text_projection' in name:
+        if ('ln_final' in name or 
+            'text_projection' in name or 
+            'visual_projection' in name or 
+            'logit_scale' in name):  # Ensure logit_scale is trainable!
             param.requires_grad = True
             print(f"Training enabled for: {name}")
+        else:
+            param.requires_grad = False
 
     # Move model to the target device after loading weights
     model = model.to(device)
     model = model.train()
     print(f"Model loaded and moved to {device}")
-    clip_model = CLIPWrapper(model, device)
+    clip_model= ClipWrapperSpatialEmbeds(model, device)
+    for param in clip_model.spatial_embedding.parameters():
+        param.requires_grad = True
     return clip_model, image_preprocess, device
 
 def train_negclip_on_controlled_images(model, train_loader, optimizer, device, epochs, output_dir, args):
@@ -139,26 +146,20 @@ def train_negclip_on_controlled_images(model, train_loader, optimizer, device, e
             image = batch["image_options"][0]
             batch_size = 1
             total += batch_size
-
-            image_features = model.model.encode_image(image.to(device))
-            image_features = F.normalize(image_features, dim=1)
             caption_options = batch["caption_options"]
 
-            caption_tokenized = torch.cat([clip.tokenize(c) for c in caption_options])
-            text_features = model.model.encode_text(caption_tokenized.to(device))
-            text_features = F.normalize(text_features, dim=1)
+            image_features, text_features, logit_scale=model(image, [el[0] for el in caption_options])
+            logits_per_image = logit_scale * image_features @ text_features.T
+            logits_per_text = logits_per_image.T
 
-            logits = 100 * (image_features @ text_features.T)
-
-            # Correct caption is always at index 0
             targets = torch.zeros(batch_size, dtype=torch.long, device=device)
-            loss = contrastive_loss(logits[0], targets)
+            loss = contrastive_loss(logits_per_image[0], targets)
 
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
 
-            _, predicted = torch.max(logits, 1)
+            _, predicted = torch.max(logits_per_image, 1)
             correct += (predicted == targets).sum().item()
 
             progress_bar.set_postfix({
@@ -256,9 +257,11 @@ def main():
     )
 
   #  evaluate_model(model, test_loader, device, test_dataset, args)
+    trainable_layers=filter(lambda p: p.requires_grad, model.model.parameters())
+    trainable_layers=list(trainable_layers) + list(model.spatial_embedding.parameters())
 
     optimizer = torch.optim.AdamW(
-        model.model.parameters(),
+        trainable_layers,
         lr=args.lr,
         weight_decay=args.weight_decay
     )

@@ -1,7 +1,7 @@
 import argparse
 import os
 import pandas as pd
-
+import torch
 from torch.utils.data import DataLoader
 
 from model_zoo import get_model
@@ -23,12 +23,15 @@ def config():
     parser.add_argument("--dataset", default="VG_Relation", type=str, \
             choices=["VG_Relation", "VG_Attribution", "COCO_Order", \
             "Flickr30k_Order", "Controlled_Images_A", "Controlled_Images_B", \
-            "COCO_QA_one_obj", "COCO_QA_two_obj", "VG_QA_one_obj", "VG_QA_two_obj", "On_Under_Images"])
+            "COCO_QA_one_obj", "COCO_QA_two_obj", "VG_QA_one_obj", "VG_QA_two_obj", "On_Under_Images", "On_Under_Images_Aug"])
     parser.add_argument("--seed", default=1, type=int)
     
     parser.add_argument("--download", action="store_true", help="Whether to download the dataset if it doesn't exist. (Default: False)")
     parser.add_argument("--save-scores", action="store_true", help="Whether to save the scores for the retrieval to analyze later.")
     parser.add_argument("--output-dir", default="./outputs", type=str)
+    parser.add_argument("--checkpoint", type=str, default=None, help="Path to a checkpoint file to load")
+
+    
     return parser.parse_args()
 
     
@@ -36,6 +39,13 @@ def main(args):
     seed_all(args.seed)
     
     model, image_preprocess = get_model(args.model_name, args.device)
+    
+    if args.checkpoint is not None:
+        print(f"Loading checkpoint from {args.checkpoint}...")
+        checkpoint = torch.load(args.checkpoint, map_location=args.device)
+        model.model.load_state_dict(checkpoint['model_state_dict'])
+        print("Checkpoint loaded successfully.")
+
     
     dataset = get_dataset(args.dataset, image_preprocess=image_preprocess, download=args.download)
     

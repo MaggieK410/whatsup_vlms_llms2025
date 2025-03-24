@@ -1,0 +1,3 @@
+,Preposition,Accuracy,Count,Dataset,Model,Seed
+0,on,0.9032258064516129,62,On_Under_Images_Aug,xvlm-pretrained-16m,1
+1,under,0.9841269841269841,63,On_Under_Images_Aug,xvlm-pretrained-16m,1
